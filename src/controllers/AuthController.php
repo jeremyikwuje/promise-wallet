@@ -2,6 +2,10 @@
 
 class AuthController extends Controller
 {
+    /**
+     * Create a new token on request
+     * and send token to request email
+     */
     public function token() : void
     {
         $this->secureWithBasicTokens();
@@ -22,40 +26,49 @@ class AuthController extends Controller
 		$email = _cleanInput($request->email);
 		$type = _cleanInput($request->type);
 
-		$types = _getTokenMeta();
+		$types = ['login', 'signup'];
+        $tokenExpiry = 7200; // seconds
 
-		if (!array_key_exists($type, $types)) {
+		if (!in_array($type, $types)) {
 			$this->errorResponse('No token type found', 400);
 		}
 
         // Error Response if the `email` isn't valid
         if (!_emailValid($email)) {
-            $this->errorResponse('Enter the right email address.');
+            $this->errorResponse("Invalid email",
+                400,
+                "INVALID_EMAIL"
+            );
         }
 
 		$user = new User();
         $user->setEmail($email);
 
         if ($type == 'signup') {
-            if (!$user->check([
+            if ($user->check([
                 'user_email' => $email
             ])) {
-                $this->errorResponse('Email already assigned to a wallet.');
+                $this->errorResponse(
+                    "Email already assigned to a wallet.",
+                    400,
+                    "DUPLICATE"
+                );
             }
         }
         else {
-            // Error Response if the `email`
-            // didn't match any record in the UserStore
             if (!$user->check([
                 'user_email' => $email
             ])) {
-                $this->errorResponse("No wallet found.", 200);
+                $this->errorResponse(
+                    "No wallet associated with that email address.",
+                    400,
+                    "NOT_FOUND"
+                );
             }
         }
 
         // Generate a `code` that expires in 30 minutes.
-		$type = $types[$type];
-		$request = $user->makeRequest( $type['value'], (time() + $type['seconds']), _ott() );
+		$request = $user->makeRequest($type, (time() + $tokenExpiry), _ott() );
 
 		if (!$request['success']) {
 			$this->errorResponse('Fail to request passcode');
@@ -63,12 +76,15 @@ class AuthController extends Controller
 
         // Send the `code` to the `email`
 		$mail = new Mail($email);
-		$mail->sendOTP($request['code'], $type['seconds']);
+		$mail->sendOTP($request['code'], $tokenExpiry);
 
         // Success Response
 		$this->successResponse(sprintf('We sent a code to your email, please use the code to continue.'));
 	}
 
+    /**
+     * Verify token and email from request
+     */
     public function verifyToken() : void
     {
         $this->secureWithBasicTokens();
@@ -86,7 +102,7 @@ class AuthController extends Controller
 		}
 
 		$token = _cleanInput($request->token);
-		$id = _cleanInput($request->user);
+		$email = _cleanInput($request->user);
 
         if (empty($token) || strlen($token) < 4) {
             $this->errorResponse('Token is invalid', 400);
@@ -95,45 +111,47 @@ class AuthController extends Controller
 		$user = new User();
 
 		// check if token is found
-		if (!$user->checkRequestToken($token, $id)) {
+		if (!$user->checkRequestToken($token, $email)) {
 			// if the token record not found
-			$user->deleteRequest($token, $id);
+			$user->deleteRequest($token, $email);
 			$this->errorResponse ('Token has expired', 400);
 		}
 
-		$data = $user->getRequestTokenInfo($token, $id); // token data
+		$data = $user->getRequestTokenInfo($token, $email); // token data
 		$type = $data['type'];
+		$user->deleteRequest($token, $email);
 
-        $user->setId($user->getIdBy($unqiue = $id));
-		$user->deleteRequest($token, $id);
-
-		$types = _getTokenMeta();
+		$types = ['signup', 'login'];
 
 		// if the token type is supported
-		if ( !array_key_exists($type, $types) ) {
-			$this->errorResponse('No token type found', 400);
+		if (!in_array($type, $types)) {
+			$this->errorResponse('Invalid token type', 400);
 		}
-
-        if ('login' === $type) {
-            $user->saveLogin();
+    
+        if ('signup' == $type) {
+            // save the user email
+            $user->create([
+                'user_email' => $email,
+                'user_fullname' => ' ',
+            ]);
         }
+        else {
+            $userId = $user->getIdBy($email);
+            $user->setId($userId);
 
-		$type = $types[$type]; // token type meta
-        
-        if ('password' === $type['value']) {
-            $accessType = 'password';
-        } else {
-            $accessType = 'account';
+            if ('login' == $type) {
+                $user->saveLogin();
+            }
         }
         
 		$jwt = _jwt_token([
             'user' => _optimusHash()->encode($user->getId()),
             'key' => $this->key,
-			'type' => $accessType
-		], $type['seconds']);
+			'type' => $type
+		], 7200);
 
-		$this->successResponse( 'Token verified successfully', [
-			'type' => 'account',
+		$this->successResponse('Token verified successfully', [
+			'type' => $type,
 			'token' => $jwt,
 		] );
     }
@@ -166,8 +184,6 @@ class AuthController extends Controller
     public function accessValid() : void
     {
         $this->secureWithBearerTokens();
-        //$this->validateJson();
-
         $this->successResponse('Token is still valid');
     }
 

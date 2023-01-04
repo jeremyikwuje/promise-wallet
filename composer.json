@@ -12,6 +12,6 @@
         "firebase/php-jwt": "^5.2",
         "hashids/hashids": "^4.1",
         "jenssegers/optimus": "^1.1",
-        "imagekit/imagekit": "^3.0"
+        "tatumio/tatum-php": "^2.0"
     }
 }

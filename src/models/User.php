@@ -5,12 +5,10 @@ class User
     public const TABLE_USER = 'users'; // the user database table
     public const TABLE_REQUEST = 'user_requests';
     public const TABLE_LOGIN = 'user_logins';
-    public const TABLE_ACTIVATE = 'user_activations';
 
     protected int $id; // the user id
     protected string $email; // the user id
 
-    public $identity;
     protected $db;
 
     public function __construct(int $id = 0, string $email = '')
@@ -19,7 +17,6 @@ class User
         $this->email = $email;
 
         $this->db = _db();
-        $this->identity = new Identity($id);
     }
 
     /**
@@ -116,15 +113,14 @@ class User
     }
 
     /**
-     * Get user id based on phone or email
-     * @param $user is the email or phone
+     * Get user id by email or name
+     * @param $user is the email or name
      */
     public static function getIdBy(string $unique) : int
     {
         $get = _db()->get( self::TABLE_USER, 'user_id', [
             'OR' => [
                 'user_email' => $unique,
-                'user_phone' => $unique
             ]
         ]);
 
@@ -134,28 +130,6 @@ class User
 
         return $get;
     }
-
-    /**
-     * Get user tier based on id
-     * @param $id is the id
-     */
-    public function getTier(int $id = 0) : int
-    {
-        if ( $id == 0 ) {
-            $id = $this->getId();
-        }
-
-        $get = _db()->get( self::TABLE_USER, 'user_tier', [
-            'user_id' => $id
-        ]);
-
-        if ( is_numeric( $get ) ) {
-            return $get;
-        }
-
-        return 0;
-    }
-
 
     /**
      * Check if a user record exist in the database
@@ -194,7 +168,7 @@ class User
      * Check if a user email exist
      * @param $user is a unique user email
      */
-    static function emailExist(string $email) : bool
+    public static function emailExist(string $email): bool
     {
         $has = _db()->has(self::TABLE_USER, [
             'user_email' => $email
@@ -244,6 +218,8 @@ class User
             ];
         }
 
+        $col['updated_at'] = _getDateTime();
+
         // update the user entry
         $this->db->update(self::TABLE_USER, $col, $where);
     }
@@ -283,10 +259,12 @@ class User
      * @param $type is the type of request
      * @param $token is the token of request
      */
-    public function checkRequestToken(string $token, string $user) : bool
+    public static function checkRequestToken(string $token, string $user) : bool
     {
+        $db = _db();
+
         // insert a new request
-        if ( ! $this->db->has( self::TABLE_REQUEST, [
+        if (!$db->has( self::TABLE_REQUEST, [
             'code' => $token,
             'user' => $user,
         ]) )
@@ -294,7 +272,7 @@ class User
             return false;
         }
 
-        $token_data = $this->db->get(self::TABLE_REQUEST, [
+        $token_data = $db->get(self::TABLE_REQUEST, [
             'user',
             'time'
         ], [
@@ -316,9 +294,11 @@ class User
      * Get request token type
      * @param $token is the token of request
      */
-    public function getRequestTokenInfo(string $token, string $user) : array
+    public static function getRequestTokenInfo(string $token, string $user) : array
     {
-        $token_data = $this->db->get( self::TABLE_REQUEST, [
+        $db = _db();
+
+        $token_data = $db->get( self::TABLE_REQUEST, [
             'user',
             'time',
             'type'
@@ -338,43 +318,30 @@ class User
      * Delete request token
      * @param $token is the token of request or user id
      */
-    public function deleteRequest(string $token, string $id) : void
+    public static function deleteRequest(string $token, string $id) : void
     {
-        $stmt = $this->db->delete( self::TABLE_REQUEST, [
+        $db = _db();
+        $db->delete( self::TABLE_REQUEST, [
             'user' => $id,
             'code' => $token
         ]);
-    }
-
-    function createUniqueName($name): string {
-        while(1) {
-            if (!$this->db->has(self::TABLE_USER, [
-                'user_sn' => $name
-            ])) {
-                return $name;
-                break;
-            }
-            $name = strtolower($name) . rand(1, 100);
-        }
     }
 
     /**
      * Save user last login
      */
     public function saveLogin() {
-        
-        $db = _db();
         $ip = _getIp();
         $device = _getDeviceName();
 
         // if this IP and device name already Logged
-        if ($db->has(self::TABLE_LOGIN, [
+        if ($this->db->has(self::TABLE_LOGIN, [
             'ip' => $ip,
             'device' => $device,
             'user_id' => $this->id,
         ])) {
 
-            $db->update(self::TABLE_LOGIN, [
+            self::$db->update(self::TABLE_LOGIN, [
                 'created_at' => _getDatetime(),
             ], [
                 'ip' => $ip,
@@ -385,7 +352,7 @@ class User
             return;
         }
 
-        $db->insert(self::TABLE_LOGIN, [
+        $this->db->insert(self::TABLE_LOGIN, [
             'ip' => $ip,
             'device' => $device,
             'user_id' => $this->id,
@@ -414,5 +381,4 @@ class User
 
         return true;
     }
-
 }

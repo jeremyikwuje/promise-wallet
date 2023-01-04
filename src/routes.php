@@ -15,10 +15,14 @@ class OptionsAltoRouter extends AltoRouter {
 $router = new OptionsAltoRouter();
 
 $routes = [
-    ['POST', '/v1/auth/login', 'AuthController#login'],
-    ['POST', '/v1/auth/signup', 'AuthController#signup'],
+    ['GET', '/v1/account', 'UserController#getInfo'],
+    ['PATCH', '/v1/account/name', 'UserController#updateName'],
+    ['PUT', '/v1/account/ledger', 'UserController#createLedger'],
+    ['GET', '/v1/account/ledger/[a:id]', 'UserController#getLedgerAccount'],
+    ['GET', '/v1/account/ledger/[a:id]/address', 'UserController#getDepositAddress'],
 
     ['POST', '/v1/auth/token', 'AuthController#token'],
+    ['POST', '/v1/auth/token/verify', 'AuthController#verifyToken'],
 ];
 
 // Add the routes

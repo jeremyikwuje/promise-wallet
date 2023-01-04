@@ -297,7 +297,7 @@ function _nameValid(string $val): bool
     }
     
     // Check value (if it Numeric type, If it less than 2 letters)
-    if (is_numeric($val) || strlen($val) < 2)
+    if (is_numeric($val) || strlen($val) < 3)
         return false;
    
     return true; // return the result
@@ -460,28 +460,6 @@ function _getAuthorizationHeader(): string
     return $header;
 }
 
-/**
- * Get all token templates
- */
-function _getTokenMeta(): array {
-    return [ // 10 minutes 
-        'password' =>  [
-            'value' => 'password',
-            'expiresIn' => '30 minutes',
-            'seconds' => 1800, // 30 minutes
-        ], // 30 minutes
-        'login' =>  [
-            'value' => 'login',
-            'expiresIn' => '30 minutes',
-            'seconds' => 1800, // 30 minutes
-        ], 
-        'account' =>  [
-            'value' => 'account',
-            'expiresIn' => '2 hours',
-            'seconds' => 7200, // 2 hours
-        ],
-    ];
-}
 
 function _allowCors(): void
 {

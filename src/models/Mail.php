@@ -90,7 +90,7 @@ class Mail
             <p>To continue, use the access code below:</p>
             <p><strong style='font-size:20px;''>{$code}</strong></p>
             <p></p>
-            <p>It expires in {$expiresIn} and can only be used once. Don\'t share this code with anyone. And ignore if you didn't request a code.</p>
+            <p>Don\'t share this code with anyone. And ignore if you didn't request a code.</p>
         ");
         $this->setFooter();
 
