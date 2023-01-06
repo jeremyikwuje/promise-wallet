@@ -341,7 +341,7 @@ class User
             'user_id' => $this->id,
         ])) {
 
-            self::$db->update(self::TABLE_LOGIN, [
+            $this->db->update(self::TABLE_LOGIN, [
                 'created_at' => _getDatetime(),
             ], [
                 'ip' => $ip,

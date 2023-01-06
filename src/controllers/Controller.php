@@ -144,8 +144,10 @@ class Controller
 	)
 	{
         http_response_code($code); // set http status code
-
         _jsonHeader(); // set json header
+
+		if ($code == 404)
+			$errorCode = "NOT_FOUND";
 
         echo json_encode([
             "status" => "error",

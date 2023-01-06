@@ -17,12 +17,19 @@ $router = new OptionsAltoRouter();
 $routes = [
     ['GET', '/v1/account', 'UserController#getInfo'],
     ['PATCH', '/v1/account/name', 'UserController#updateName'],
-    ['PUT', '/v1/account/ledger', 'UserController#createLedger'],
-    ['GET', '/v1/account/ledger/[a:id]', 'UserController#getLedgerAccount'],
-    ['GET', '/v1/account/ledger/[a:id]/address', 'UserController#getDepositAddress'],
+
+    ['PUT', '/v1/account/ledger', 'LedgerController#create'],
+    ['GET', '/v1/account/ledger/transactions', 'LedgerController#transactions'],
+    ['GET', '/v1/account/ledger/[a:id]', 'LedgerController#get'],
+    ['GET', '/v1/account/ledger/[a:id]/address', 'LedgerController#getDepositAddress'],
+    ['POST', '/v1/account/ledger/[a:id]/withdraw', 'LedgerController#withdraw'],
+    ['POST', '/v1/account/ledger/[a:id]/send', 'LedgerController#send'],
+
 
     ['POST', '/v1/auth/token', 'AuthController#token'],
     ['POST', '/v1/auth/token/verify', 'AuthController#verifyToken'],
+
+    ['POST', '/v1/respond/withdrawals', 'RespondController#withdrawals'],
 ];
 
 // Add the routes
