@@ -1,5 +1,7 @@
+***This project is still under development and not yet recommended for production. Use it with caution!***
+
 ## Promise Wallet
-Promise a self hosted bitcoin wallet for sending and recieving bitcoins. If you want to build a custodial bitcoin wallet for sending and recieving bitcoin, you can fork this code and self host.
+Promise is a self hosted bitcoin wallet for sending and recieving bitcoins. If you want to build a custodial bitcoin wallet for sending and recieving bitcoin, you can fork this code and self host.
 
 ## 🎨 Features
 1. Account creation (name and email)
